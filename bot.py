@@ -14,7 +14,7 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.chat_id)
-    requests.get(f"{API_URL}/reset", params={"user_id": user_id})
+    requests.get(f"{API_URL}/cleanup", params={"user_id": user_id})
     await update.message.reply_text("Reset done")
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
