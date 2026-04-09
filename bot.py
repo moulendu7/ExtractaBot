@@ -6,57 +6,41 @@ from telegram.ext import ApplicationBuilder, MessageHandler, CommandHandler, fil
 BOT_TOKEN = os.getenv("BOT_TOKEN")
 API_URL = os.getenv("API_URL")
 
-if not API_URL.startswith("http"):
-    raise ValueError("API_URL must start with https://")
-
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("👋 Send a PDF to begin.")
+    await update.message.reply_text("Send a PDF")
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text(
-        "📘 Upload PDF → Ask questions\n/start\n/help\n/reset"
-    )
+    await update.message.reply_text("Upload PDF then ask")
 
 async def reset(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.chat_id)
     requests.get(f"{API_URL}/reset", params={"user_id": user_id})
-    await update.message.reply_text("🔄 Upload new PDF.")
+    await update.message.reply_text("Reset done")
 
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.chat_id)
 
-    await update.message.reply_text("⏳ Processing PDF...")
+    await update.message.reply_text("Processing")
 
     file = await update.message.document.get_file()
     file_path = f"{user_id}.pdf"
 
     await file.download_to_drive(file_path)
 
-    try:
-        with open(file_path, "rb") as f:
-            res = requests.post(
-                f"{API_URL}/upload",
-                files={"file": f},
-                params={"user_id": user_id}
-            )
+    with open(file_path, "rb") as f:
+        res = requests.post(
+            f"{API_URL}/upload",
+            files={"file": f},
+            params={"user_id": user_id}
+        )
 
-        print("UPLOAD RESPONSE:", res.text)
-
-        await update.message.reply_text("✅ PDF uploaded. Ask questions.")
-
-    except Exception as e:
-        print("BOT UPLOAD ERROR:", str(e))
-        await update.message.reply_text("❌ Upload failed.")
+    await update.message.reply_text("Uploaded")
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = str(update.message.chat_id)
     text = update.message.text
 
-    if text.lower() in ["hi", "hello"]:
-        await update.message.reply_text("👋 Hello!")
-        return
-
-    await update.message.reply_text("⏳ Thinking...")
+    await update.message.reply_text("Thinking")
 
     try:
         res = requests.get(
@@ -66,16 +50,14 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
         try:
             data = res.json()
-            answer = data.get("answer", "⚠️ No answer")
+            answer = data.get("answer", "error")
         except:
-            print("RAW RESPONSE:", res.text)
-            answer = "⚠️ Server error"
+            answer = "server error"
 
         await update.message.reply_text(answer)
 
-    except Exception as e:
-        print("BOT ASK ERROR:", str(e))
-        await update.message.reply_text("❌ Failed to get answer")
+    except:
+        await update.message.reply_text("failed")
 
 async def handle_sticker(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("❤️")
@@ -89,7 +71,5 @@ app.add_handler(CommandHandler("reset", reset))
 app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
 app.add_handler(MessageHandler(filters.Sticker.ALL, handle_sticker))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
-print("🚀 Bot running...")
 
 app.run_polling()
