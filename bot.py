@@ -61,5 +61,5 @@ app.add_handler(CommandHandler("reset", reset))
 
 app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
 app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-
+app.run_polling(drop_pending_updates=True)
 app.run_polling()
